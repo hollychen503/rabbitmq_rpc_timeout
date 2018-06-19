@@ -40,11 +40,12 @@ var (
 )
 
 type myParams struct {
-	Name  string
-	ID    string
-	UID   string
-	Begin int64 //time.Now().Unix()
-	Rsp   string
+	Name    string
+	ID      string
+	UID     string
+	Begin   int64 //time.Now().Unix()
+	Rsp     string
+	RspCode int
 }
 type pMyParams *myParams
 
@@ -127,7 +128,7 @@ func handleResponse(msg []byte) {
 	}
 	dif := time.Now().Unix() - my.Begin
 	if dif > reqTimeout {
-		log.Println("this req is timeout.", my)
+		log.Println(" *** this req is timeout.", my)
 		return
 	}
 
@@ -243,22 +244,15 @@ func users(c echo.Context) error {
 
 	select {
 	case <-time.After(5 * time.Second):
-		// clean
+		// 如果 N 秒之内还没有响应，终止这个 request
 		rspMap.Delete(my.UID)
 		return c.String(http.StatusInternalServerError, "Internal error, maybe timeout!")
 	case d := <-ready:
+		// 扩展： 可以将 response 扩展成 json， 检查 允许/拒绝，。。。
+		//   根据 response  的 http code , 设置 成功码/错误码
+		//    d => json => http code => client
 		log.Println("  receive rsp data:", d)
 		return c.String(http.StatusOK, "Hello, "+my.Name+"@"+my.ID+", AC info:"+d)
 	}
-
-	// 等待 N 秒， 看看 ac.demo 是否有反馈信息
-
-	/*
-		r, ok := rspMap.Load(my.UID)
-		if !ok {
-			return c.String(http.StatusInternalServerError, "Internal error, maybe timeout!")
-		}
-		pRsp := r.(pMyParams)
-	*/
 
 }

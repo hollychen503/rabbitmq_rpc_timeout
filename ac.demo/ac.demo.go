@@ -15,6 +15,7 @@ var (
 	conn    *amqp.Connection
 	ch      *amqp.Channel
 	acQueue amqp.Queue
+	total   int
 )
 
 const (
@@ -42,6 +43,8 @@ func init() {
 
 func main() {
 	useSleep := flag.Bool("sleep", true, "use sleep to demo timeout")
+	nPart := flag.Int("n", 1, "1/n will timeout")
+
 	flag.Parse()
 	log.Println("use sleep:", *useSleep)
 
@@ -109,7 +112,16 @@ func main() {
 					return
 				}
 
-				if *useSleep {
+				if *nPart > 1 {
+					// n 分之一 将 sleep, 模拟 timeout
+					total++
+					if total%(*nPart) == 0 {
+						log.Println("sleep 6 second. demo timeout.")
+						time.Sleep(6 * time.Second)
+					}
+				}
+
+				if *useSleep && *nPart <= 1 {
 					// 随机休息 N 秒，造成 波分请求 timeout 效果
 					n := 2 + rand.Intn(4)
 					log.Println("sleep ", n, "seconds.")
