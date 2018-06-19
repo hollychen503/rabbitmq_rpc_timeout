@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"fmt"
 	"log"
 	"math/rand"
@@ -40,6 +41,9 @@ func init() {
 }
 
 func main() {
+	useSleep := flag.Bool("sleep", true, "use sleep to demo timeout")
+	flag.Parse()
+	log.Println("use sleep:", *useSleep)
 
 	var err error
 
@@ -105,10 +109,13 @@ func main() {
 					return
 				}
 
-				// 随机休息 N 秒，造成 波分请求 timeout 效果
-				n := 2 + rand.Intn(4)
-				log.Println("sleep ", n, "seconds.")
-				time.Sleep(time.Duration(n) * time.Second)
+				if *useSleep {
+					// 随机休息 N 秒，造成 波分请求 timeout 效果
+					n := 2 + rand.Intn(4)
+					log.Println("sleep ", n, "seconds.")
+					time.Sleep(time.Duration(n) * time.Second)
+				}
+
 				my.Rsp = "your access code is OK."
 				dat, err := json.Marshal(my)
 				if err != nil {
