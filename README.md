@@ -9,3 +9,4 @@ demo rabbitmq RPC pattern with timeout
 
 # ac.demo.go
 - demo the  access privilege checking
+- receiving ac request from routing key ac_demo_rpc_queue and response to msg.ReplyTo queue
