@@ -2,9 +2,11 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
 	"log"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
 
@@ -28,11 +30,13 @@ const (
 )
 
 var (
-	conn   *amqp.Connection
-	ch     *amqp.Channel
-	rpcQ   amqp.Queue
-	corrID = randomString(32)
+	conn *amqp.Connection
+	ch   *amqp.Channel
+	rpcQ amqp.Queue
+	//corrID = randomString(32)
+	corrID = sid.Id()
 	rspMap sync.Map
+	port   int
 )
 
 type myParams struct {
@@ -78,6 +82,8 @@ func setupRPCQueue() (err error) {
 		false, // noWait //When noWait is true, the queue will assume to be declared on the server.
 		nil,   // arguments
 	)
+
+	log.Println("rpcQ name:", rpcQ.Name)
 
 	msgs, err := ch.Consume(
 		rpcQ.Name, // queue
@@ -141,7 +147,13 @@ func handleResponse(msg []byte) {
 }
 
 func init() {
-	log.Println("init system...")
+
+	log.Println("init system...", corrID)
+	myport := flag.Int("port", 23450, "listen port")
+	flag.Parse()
+	log.Println("listen port is:", *myport)
+	port = *myport
+
 	var err error
 
 	conn, err = amqp.Dial("amqp://guest:guest@localhost:5672/") // get params from config/env/...
@@ -181,7 +193,7 @@ func main() {
 	e.GET("/users/:name/:id", users)
 
 	// Start server
-	e.Logger.Fatal(e.Start(":1323"))
+	e.Logger.Fatal(e.Start(":" + strconv.Itoa(port)))
 
 }
 

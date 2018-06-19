@@ -84,9 +84,12 @@ func main() {
 	forever := make(chan bool)
 
 	go func() {
-		for d := range msgs {
-			go func() {
+		for d0 := range msgs {
+			fmt.Println("d0.ReplyTo=", d0.ReplyTo)
+			go func(d amqp.Delivery) {
 				//n, err := strconv.Atoi(string(d.Body))
+				fmt.Println("d1.ReplyTo=", d.ReplyTo)
+
 				fmt.Println(" body: ", string(d.Body))
 				my := &myParams{}
 				if err := json.Unmarshal(d.Body, my); err != nil {
@@ -111,7 +114,7 @@ func main() {
 				if err != nil {
 					log.Println(" failed to marshal.")
 				}
-				log.Println("send back response")
+				log.Println("send response back to ", d.ReplyTo)
 
 				err = ch.Publish(
 					"",        // exchange
@@ -127,8 +130,7 @@ func main() {
 
 				//d.Ack(false)
 
-			}()
-
+			}(d0) // 注意这里不能使用指针传递或引用传递，否则会出错。尽快copy走数据！
 		}
 	}()
 
