@@ -17,7 +17,7 @@ var (
 )
 
 const (
-	reqTimeout = 5
+	reqTimeout = 5 // 请求超时时间
 )
 
 type myParams struct {
@@ -73,7 +73,7 @@ func main() {
 		q.Name, // queue
 		"",     // consumer
 		//false,  // auto-ack
-		true,  // auto-ack
+		true,  // auto-ack  //自动 ack。不要手动，让 client timeout 机制发挥它应有的作用
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
@@ -105,7 +105,7 @@ func main() {
 					return
 				}
 
-				// 随机休息 N 秒，造成 response timeout
+				// 随机休息 N 秒，造成 波分请求 timeout 效果
 				n := 2 + rand.Intn(4)
 				log.Println("sleep ", n, "seconds.")
 				time.Sleep(time.Duration(n) * time.Second)

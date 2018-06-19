@@ -10,3 +10,12 @@ demo rabbitmq RPC pattern with timeout
 # ac.demo.go
 - demo the  access privilege checking
 - receiving ac request from routing key ac_demo_rpc_queue and response to msg.ReplyTo queue
+
+
+# RabbitMQ server
+run the following command to bootup rabbitMQ 
+
+~~~
+cd /path/to/rabbitmq_rpc_timeout
+docker-compose -f setup.test.env.yml up
+~~~
