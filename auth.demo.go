@@ -78,8 +78,8 @@ func setupRPCQueue() (err error) {
 	rpcQ, err = ch.QueueDeclare(
 		"",    // name  // 让系统随机取名
 		false, // durable // 不需要durable。一旦进程退出，就允许系统把这个queue 销毁
-		true,  // delete when unused // 如果我自己不用，也没人用，这个queue就应该被删掉
-		true,  // exclusive  // 这里怎么解释？ 如果只允许自己使用
+		false, // autoDelete // 至少有一个消费者连接本队列，之后所有与这个队列连接的消费者都断开时，才会自动删除. （生产者客户端创建这个队列，或者没有消费者客户端与这个队列连接，都不会自动删除）
+		true,  // exclusive  // 这里怎么解释？ 如果一个队列被声明为排他队列，该队列仅仅对首次声明他的连接可见。并在连接断开时自动删除。“首次”是指如果一个连接已经声明了一个排他队列，其他连接是不允许建立同名的排他队列（只能打开？）。（Channels on other connections will receive an error when attempting  to declare, bind, consume, purge or delete a queue with the same name.）
 		false, // noWait //When noWait is true, the queue will assume to be declared on the server.
 		nil,   // arguments
 	)
