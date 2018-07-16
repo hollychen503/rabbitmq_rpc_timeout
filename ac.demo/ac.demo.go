@@ -62,7 +62,7 @@ func main() {
 	q, err := ch.QueueDeclare(
 		"ac_demo_rpc_queue", // name
 		false,               // durable
-		false,               // delete when unused
+		false,               // autoDelete：delete when unused
 		false,               // exclusive
 		false,               // no-wait
 		nil,                 // arguments
@@ -70,7 +70,7 @@ func main() {
 	failOnError(err, "Failed to declare a ac_demo_rpc_queue queue")
 
 	err = ch.Qos(
-		1,     // prefetch count
+		1,     // prefetch count  （1: 在 worker 回复 ack 之前，不要给他新msg。这样就可以把msg 给其他闲人。） （don't dispatch a new message to a worker until it has processed and acknowledged the previous one.）
 		0,     // prefetch size
 		false, // global
 	)
@@ -79,8 +79,8 @@ func main() {
 	msgs, err := ch.Consume(
 		q.Name, // queue
 		"",     // consumer
-		//false,  // auto-ack
-		true,  // auto-ack  //自动 ack。不要手动，让 client timeout 机制发挥它应有的作用
+		//true,  // auto-ack  //自动 ack。不要手动，让 client timeout 机制发挥它应有的作用??
+		false, // 手动 ack. 必须手动ack，否则 consumer会一直接消息，不管自己能不能处理得过来！
 		false, // exclusive
 		false, // no-local
 		false, // no-wait
@@ -101,14 +101,14 @@ func main() {
 				my := &myParams{}
 				if err := json.Unmarshal(d.Body, my); err != nil {
 					log.Println("failed to unmarshal msg")
-					//d.Ack(false)
+					d.Ack(false)
 					return
 				}
 				//failOnError(err, "Failed to convert body to integer")
 				log.Println("Receive message:", *my)
 				if time.Now().Unix()-my.Begin > reqTimeout {
 					log.Println("This request is timeout. Just drop it.")
-					//d.Ack(false)
+					d.Ack(false)
 					return
 				}
 
@@ -116,13 +116,15 @@ func main() {
 					// n 分之一 将 sleep, 模拟 timeout
 					total++
 					if total%(*nPart) == 0 {
+						fmt.Println("+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++")
 						log.Println("sleep 6 second. demo timeout.")
 						time.Sleep(6 * time.Second)
+						fmt.Println("----------------------------------------------------------------")
 					}
 				}
 
 				if *useSleep && *nPart <= 1 {
-					// 随机休息 N 秒，造成 波分请求 timeout 效果
+					// 随机休息 N 秒，造成 部分请求 timeout 效果
 					n := 2 + rand.Intn(4)
 					log.Println("sleep ", n, "seconds.")
 					time.Sleep(time.Duration(n) * time.Second)
@@ -134,6 +136,9 @@ func main() {
 					log.Println(" failed to marshal.")
 				}
 				log.Println("send response back to ", d.ReplyTo)
+
+				// test error marshal
+				//dat = nil
 
 				err = ch.Publish(
 					"",        // exchange
@@ -147,7 +152,7 @@ func main() {
 					})
 				failOnError(err, "Failed to publish a message")
 
-				//d.Ack(false)
+				d.Ack(false)
 
 			}(d0) // 注意这里不能使用指针传递或引用传递，否则会出错。尽快copy走数据！
 		}
